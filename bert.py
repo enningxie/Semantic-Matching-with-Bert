@@ -10,18 +10,16 @@ import pandas as pd
 import numpy as np
 
 
+# /Data/public/Bert/roeberta_zh_L-24_H-768_A-12
 class Bert(object):
     def __init__(self):
-        # /Data/public/Bert/chinese_wwm_L-12_H-768_A-12
-        # /Data/public/Bert/chinese_L-12_H-768_A-12
-        # /Data/public/Bert/chinese_wwm_ext_L-12_H-768_A-12
         self.maxlen = 32
-        self.config_path = '/Data/public/Bert/chinese_wwm_ext_L-12_H-768_A-12/bert_config.json'
-        self.checkpoint_path = '/Data/public/Bert/chinese_wwm_ext_L-12_H-768_A-12/bert_model.ckpt'
-        self.dict_path = '/Data/public/Bert/chinese_wwm_ext_L-12_H-768_A-12/vocab.txt'
-        self.train_data_path = '/home/xen/Datasets/Semantic-Matching/train.csv'
-        self.dev_data_path = '/home/xen/Datasets/Semantic-Matching/dev.csv'
-        self.restore_model_path = 'saved_models/bert_wwm_ext_0813_1808.h5'
+        self.config_path = '/Data/public/Bert/roeberta_zh_L-24_H-768_A-12/bert_config_middle.json'
+        self.checkpoint_path = '/Data/public/Bert/roeberta_zh_L-24_H-768_A-12/bert_model'
+        self.dict_path = '/Data/public/Bert/roeberta_zh_L-24_H-768_A-12/vocab.txt'
+        self.train_data_path = 'data/train_LCQMC.csv'
+        self.dev_data_path = 'data/dev_LCQMC.csv'
+        self.restore_model_path = 'saved_models/roeberta_zh_L-24_H-768_A-12_0904_0959.h5'
         self.token_dict = self._read_token_dict()
         self.tokenizer = self.OurTokenizer(self.token_dict)
         self.model = self._get_model()
@@ -51,6 +49,14 @@ class Bert(object):
 
         return token_dict
 
+    def _seq_padding(self, X, padding=0):
+        L = [len(x) for x in X]
+        ML = max(L)
+        padded_sent = np.array([
+            np.concatenate([x, [padding] * (ML - len(x))]) if len(x) < ML else x for x in X
+        ])
+        return padded_sent
+
     # bert for Semantic matching, model architecture
     def _get_model(self):
         bert_model = load_trained_model_from_checkpoint(self.config_path, self.checkpoint_path, seq_len=None)
@@ -75,10 +81,10 @@ class Bert(object):
         sent_2 = data['sentence2'].values
         label = data['label'].values
         X1_pad, X2_pad = self._data_preprocessing(sent_1, sent_2)
-        X1 = np.vstack((X1_pad, X2_pad))
-        X2 = np.vstack((X2_pad, X1_pad))
-        y_train = np.hstack((label, label))
-        return X1, X2, y_train
+        # X1 = np.vstack((X1_pad, X2_pad))
+        # X2 = np.vstack((X2_pad, X1_pad))
+        # y_train = np.hstack((label, label))
+        return X1_pad, X2_pad, label
 
     # model training operation
     def train(self):
@@ -98,7 +104,7 @@ class Bert(object):
         self.model.summary()
         self.model.fit(x=[train_x1, train_x2],
                        y=train_label,
-                       batch_size=32,
+                       batch_size=16,
                        epochs=10,
                        verbose=1,
                        callbacks=[checkpoint, early_stop],
@@ -111,8 +117,10 @@ class Bert(object):
             x1, x2 = self.tokenizer.encode(first=tmp_sent1[:self.maxlen], second=tmp_sent2[:self.maxlen])
             X1.append(x1)
             X2.append(x2)
-        X1 = pad_sequences(X1, maxlen=67, padding='post', truncating='post')
-        X2 = pad_sequences(X2, maxlen=67, padding='post', truncating='post')
+        X1 = self._seq_padding(X1)
+        X2 = self._seq_padding(X2)
+        # X1 = pad_sequences(X1, maxlen=67, padding='post', truncating='post')
+        # X2 = pad_sequences(X2, maxlen=67, padding='post', truncating='post')
         return X1, X2
 
     # model predict operation

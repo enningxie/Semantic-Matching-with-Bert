@@ -1,2 +1,4 @@
 .idea
 data
+saved_models
+*.log
