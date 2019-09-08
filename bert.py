@@ -14,12 +14,12 @@ import numpy as np
 class Bert(object):
     def __init__(self):
         self.maxlen = 32
-        self.config_path = '/Data/public/Bert/roeberta_zh_L-24_H-768_A-12/bert_config_middle.json'
-        self.checkpoint_path = '/Data/public/Bert/roeberta_zh_L-24_H-768_A-12/bert_model'
-        self.dict_path = '/Data/public/Bert/roeberta_zh_L-24_H-768_A-12/vocab.txt'
+        self.config_path = '/Data/public/Bert/roeberta_zh_L-24_H-1024_A-16/bert_config_large.json'
+        self.checkpoint_path = '/Data/public/Bert/roeberta_zh_L-24_H-1024_A-16/roberta_zh_large_model.ckpt'
+        self.dict_path = '/Data/public/Bert/roeberta_zh_L-24_H-1024_A-16/vocab.txt'
         self.train_data_path = 'data/train_LCQMC.csv'
         self.dev_data_path = 'data/dev_LCQMC.csv'
-        self.restore_model_path = 'saved_models/roeberta_zh_L-24_H-768_A-12_0904_0959.h5'
+        self.restore_model_path = 'saved_models/roeberta_zh_L-24_H-1024_A-16_0908_1926.h5'
         self.token_dict = self._read_token_dict()
         self.tokenizer = self.OurTokenizer(self.token_dict)
         self.model = self._get_model()
@@ -104,7 +104,7 @@ class Bert(object):
         self.model.summary()
         self.model.fit(x=[train_x1, train_x2],
                        y=train_label,
-                       batch_size=16,
+                       batch_size=8,
                        epochs=10,
                        verbose=1,
                        callbacks=[checkpoint, early_stop],
