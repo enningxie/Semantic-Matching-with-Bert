@@ -10,20 +10,21 @@ import pandas as pd
 import numpy as np
 
 
-# /Data/public/Bert/roeberta_zh_L-24_H-768_A-12
 class Bert(object):
-    def __init__(self):
+    def __init__(self, mode='inference'):
         self.maxlen = 32
-        self.config_path = '/Data/public/Bert/roeberta_zh_L-24_H-1024_A-16/bert_config_large.json'
-        self.checkpoint_path = '/Data/public/Bert/roeberta_zh_L-24_H-1024_A-16/roberta_zh_large_model.ckpt'
-        self.dict_path = '/Data/public/Bert/roeberta_zh_L-24_H-1024_A-16/vocab.txt'
+        self.config_path = '/Data/public/Bert/chinese_wwm_ext_L-12_H-768_A-12/bert_config.json'
+        self.checkpoint_path = '/Data/public/Bert/chinese_wwm_L-12_H-768_A-12/bert_model.ckpt'
+        self.dict_path = '/Data/public/Bert/chinese_wwm_ext_L-12_H-768_A-12/vocab.txt'
         self.train_data_path = 'data/train_LCQMC.csv'
         self.dev_data_path = 'data/dev_LCQMC.csv'
-        self.restore_model_path = 'saved_models/roeberta_zh_L-24_H-1024_A-16_0908_1926.h5'
+        self.test_data_path = 'data/test_LCQMC.csv'
+        self.restore_model_path = 'saved_models/bert_wwm_ext_1024_1053.h5'
         self.token_dict = self._read_token_dict()
         self.tokenizer = self.OurTokenizer(self.token_dict)
         self.model = self._get_model()
-        # self._init_model()
+        if mode == 'inference':
+            self._init_model()
 
     # customize tokenizer
     class OurTokenizer(Tokenizer):
@@ -86,7 +87,7 @@ class Bert(object):
         # y_train = np.hstack((label, label))
         return X1_pad, X2_pad, label
 
-    # model training operation
+    # model training step
     def train(self):
         # train_data
         train_x1, train_x2, train_label = self._prepare_data(self.train_data_path)
@@ -104,7 +105,7 @@ class Bert(object):
         self.model.summary()
         self.model.fit(x=[train_x1, train_x2],
                        y=train_label,
-                       batch_size=8,
+                       batch_size=64,
                        epochs=10,
                        verbose=1,
                        callbacks=[checkpoint, early_stop],
@@ -125,7 +126,24 @@ class Bert(object):
 
     # model predict operation
     def predict(self, sentence1, sentence2):
-        # self.model.load_weights(self.restore_model_path)
         X1, X2 = self._data_preprocessing(sentence1, sentence2)
         y_pred = self.model.predict([X1, X2], batch_size=1024)
         return y_pred
+
+    def test(self):
+        self.model.compile(
+            loss='binary_crossentropy',
+            optimizer=Adam(1e-5),  # 用足够小的学习率
+            metrics=['accuracy']
+        )
+        # test_data
+        test_x1, test_x2, test_label = self._prepare_data(self.test_data_path)
+        test_loss, test_acc = self.model.evaluate(x=[test_x1, test_x2], y=test_label)
+        print('test loss: {}'.format(test_loss))
+        print('test acc: {}'.format(test_acc))
+
+    def _init_model(self):
+        self.model.load_weights(self.restore_model_path)
+        sentence1 = '干嘛呢'
+        sentence2 = '你是机器人'
+        print('model albert loaded succeed. ({})'.format(self.predict([sentence1], [sentence2]).item()))
