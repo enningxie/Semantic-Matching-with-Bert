@@ -19,7 +19,7 @@ class Bert(object):
         self.train_data_path = 'data/train_LCQMC.csv'
         self.dev_data_path = 'data/dev_LCQMC.csv'
         self.test_data_path = 'data/test_LCQMC.csv'
-        self.restore_model_path = 'saved_models/bert_wwm_ext_1024_1053.h5'
+        self.restore_model_path = 'saved_models/bert_0801_1405.h5'
         self.token_dict = self._read_token_dict()
         self.tokenizer = self.OurTokenizer(self.token_dict)
         self.model = self._get_model()
@@ -146,4 +146,4 @@ class Bert(object):
         self.model.load_weights(self.restore_model_path)
         sentence1 = '干嘛呢'
         sentence2 = '你是机器人'
-        print('model albert loaded succeed. ({})'.format(self.predict([sentence1], [sentence2]).item()))
+        print('model bert loaded succeed. ({})'.format(self.predict([sentence1], [sentence2]).item()))

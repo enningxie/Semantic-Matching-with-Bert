@@ -16,49 +16,56 @@ set_gelu('tanh')  # 切换gelu版本
 
 
 class Albert(object):
-    def __init__(self, mode='inference'):
-        self.maxlen = 128
-        self.albert_config_path = 'data/albert_tiny_250k/albert_config_tiny.json'
-        self.albert_checkpoint_path = 'data/albert_tiny_250k/albert_model.ckpt'
-        self.albert_dict_path = 'data/albert_tiny_250k/vocab.txt'
-        self.train_data_path = 'data/train_LCQMC.csv'
-        self.dev_data_path = 'data/dev_LCQMC.csv'
-        self.test_data_path = 'data/test_LCQMC.csv'
+    def __init__(self, mode='inference', mode_='part'):
+        self.maxlen = 32
+        self.albert_config_path = '/Data/public/Bert/albert_tiny_250k/albert_config_tiny.json'
+        self.albert_checkpoint_path = '/Data/public/Bert/albert_tiny_250k/albert_model.ckpt'
+        self.albert_dict_path = '/Data/public/Bert/albert_tiny_250k/vocab.txt'
+        self.train_data_path = 'data/train_BQ.csv'
+        self.dev_data_path = 'data/dev_BQ.csv'
+        self.test_data_path = 'data/test_BQ.csv'
         # albert_tiny_250k.h5 挺好的
-        self.restore_model_path = 'data/albert_tiny_250k/albert_tiny_250k.h5'
+        self.restore_model_path = 'saved_models/test_albert_tiny_03.h5'
         # albert
-        self.albert_process_data()
+        self.albert_process_data(mode_)
         if mode == 'train':
             self.model = self._get_model()
+            self.train()
         elif mode == 'inference':
             self._init_model()
 
     # todo keep words 工业场景下需要remove
-    def albert_process_data(self):
-        train_df = pd.read_csv(self.train_data_path, names=['seq1', 'seq2', 'label'])
-        valid_df = pd.read_csv(self.dev_data_path, names=['seq1', 'seq2', 'label'])
-        test_df = pd.read_csv(self.test_data_path, names=['seq1', 'seq2', 'label'])
-        # total data
-        tmp_df = pd.concat([train_df, valid_df, test_df])
-        chars = defaultdict(int)
-        for _, tmp_row in tmp_df.iterrows():
-            for tmp_char in tmp_row.seq1:
-                chars[tmp_char] += 1
-            for tmp_char in tmp_row.seq2:
-                chars[tmp_char] += 1
-        # 过滤低频字
-        chars = {i: j for i, j in chars.items() if j >= 4}
+    def albert_process_data(self, mode='part'):
         _token_dict = load_vocab(self.albert_dict_path)  # 读取字典
-        self.token_dict, self.keep_words = {}, []  # keep_words是在bert中保留的字表
-        # 保留特殊字符
-        for c in ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[unused1]']:
-            self.token_dict[c] = len(self.token_dict)
-            self.keep_words.append(_token_dict[c])
-        # 字典只保留数据中出现的高频字
-        for c in chars:
-            if c in _token_dict:
+        # 只取涉及数据集中出现的字
+        if mode == 'part':
+            train_df = pd.read_csv(self.train_data_path, names=['seq1', 'seq2', 'label'])
+            valid_df = pd.read_csv(self.dev_data_path, names=['seq1', 'seq2', 'label'])
+            test_df = pd.read_csv(self.test_data_path, names=['seq1', 'seq2', 'label'])
+            # total data
+            tmp_df = pd.concat([train_df, valid_df, test_df])
+            chars = defaultdict(int)
+            for _, tmp_row in tmp_df.iterrows():
+                for tmp_char in tmp_row.seq1:
+                    chars[tmp_char] += 1
+                for tmp_char in tmp_row.seq2:
+                    chars[tmp_char] += 1
+            # 过滤低频字
+            chars = {i: j for i, j in chars.items() if j >= 4}
+            self.token_dict, self.keep_words = {}, []  # keep_words是在bert中保留的字表
+            # 保留特殊字符
+            for c in ['[PAD]', '[UNK]', '[CLS]', '[SEP]', '[unused1]']:
                 self.token_dict[c] = len(self.token_dict)
                 self.keep_words.append(_token_dict[c])
+            # 字典只保留数据中出现的高频字
+            for c in chars:
+                if c in _token_dict:
+                    self.token_dict[c] = len(self.token_dict)
+                    self.keep_words.append(_token_dict[c])
+        elif mode == 'full':
+            self.token_dict, self.keep_words = _token_dict, []
+            for k in self.token_dict:
+                self.keep_words.append(self.token_dict[k])
         self.tokenizer = SimpleTokenizer(self.token_dict)  # 建立分词器
 
     # data pre-processing operation
@@ -144,7 +151,7 @@ class Albert(object):
             metrics=['accuracy']
         )
         # test_data
-        test_x1, test_x2, test_label = self._prepare_data(self.test_data_path)
+        test_x1, test_x2, test_label = self._prepare_data(self.dev_data_path)
         test_loss, test_acc = self.model.evaluate(x=[test_x1, test_x2], y=test_label)
         print('test loss: {}'.format(test_loss))
         print('test acc: {}'.format(test_acc))
