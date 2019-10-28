@@ -16,16 +16,18 @@ set_gelu('tanh')  # 切换gelu版本
 
 
 class Albert(object):
-    def __init__(self, mode='inference', mode_='part'):
+    def __init__(self, mode='inference', mode_='part', model_name=None, dataset_name=None):
         self.maxlen = 32
         self.albert_config_path = '/Data/public/Bert/albert_tiny_250k/albert_config_tiny.json'
         self.albert_checkpoint_path = '/Data/public/Bert/albert_tiny_250k/albert_model.ckpt'
         self.albert_dict_path = '/Data/public/Bert/albert_tiny_250k/vocab.txt'
-        self.train_data_path = 'data/train_BQ.csv'
-        self.dev_data_path = 'data/dev_BQ.csv'
-        self.test_data_path = 'data/test_BQ.csv'
+        self.train_data_path = 'data/train_{}.csv'.format(dataset_name)
+        self.dev_data_path = 'data/dev_{}.csv'.format(dataset_name)
+        self.test_data_path = 'data/test_{}.csv'.format(dataset_name)
         # albert_tiny_250k.h5 挺好的
-        self.restore_model_path = 'saved_models/test_albert_tiny_03.h5'
+        # self.restore_model_path = 'saved_models/test_albert_tiny_{}.h5'.format(model_name)
+        self.restore_model_path = '/Data/models/{}'.format(model_name)
+
         # albert
         self.albert_process_data(mode_)
         if mode == 'train':
