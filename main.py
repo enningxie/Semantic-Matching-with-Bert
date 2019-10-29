@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import time
 
-os.environ['CUDA_VISIBLE_DEVICES'] = '2'
+os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 
 
 def exceed_threshold(y_pred, y_label, threshold=0.7):
@@ -39,7 +39,7 @@ def run():
     # model_bert.train()
 
     # Albert
-    model_albert = Albert(mode='train', mode_='part')
+    model_albert = Albert(mode='train', mode_='full', model_name='test_albert_tiny_489k_06.h5', dataset_name='sent_pair')
     # print(model_albert.predict(['我今天不买', '今天天气不错', '我不想买了', '很好', '不好', '没有啊', '买好了', '不需要'], ['我今天买好了', '今天天气不好','我想买', '不好', '不怎么样', '有啊', '已经买了', '没必要']))
     # while True:
     #     sent1 = input('sent1: ')
@@ -49,23 +49,28 @@ def run():
 
 if __name__ == '__main__':
     # run()
+
+    # Evaluate
     tmp_models_config = [
-        ['full', 'albert_tiny_250k.h5', 'LCQMC'],
-        ['full', 'albert_tiny_250k_BQ.h5', 'LCQMC'],
-        ['full', 'albert_tiny_250k.h5', 'LCQMC']
+        ['part', 'test_albert_tiny_489k_01.h5', 'LCQMC'],
+        ['full', 'test_albert_tiny_489k_02.h5', 'LCQMC'],
+        ['part', 'test_albert_tiny_489k_03.h5', 'BQ'],
+        ['full', 'test_albert_tiny_489k_04.h5', 'BQ'],
+        ['part', 'test_albert_tiny_489k_05.h5', 'sent_pair'],
+        ['full', 'test_albert_tiny_489k_06.h5', 'sent_pair']
     ]
-    models_config = [
-        ['part', '01', 'LCQMC'],
-        ['full', '02', 'LCQMC'],
-        ['part', '03', 'BQ'],
-        ['full', '04', 'BQ'],
-        ['part', '05', 'sent_pair'],
-        ['full', '06', 'sent_pair'],
-        ['full', '07', 'LCQMC'],
-        ['full', '08', 'LCQMC'],
-        ['full', '09', 'LCQMC'],
-        ['part', '10', 'sent_pair']
-    ]
+    # models_config = [
+    #     ['part', '01', 'LCQMC'],
+    #     ['full', '02', 'LCQMC'],
+    #     ['part', '03', 'BQ'],
+    #     ['full', '04', 'BQ'],
+    #     ['part', '05', 'sent_pair'],
+    #     ['full', '06', 'sent_pair'],
+    #     ['full', '07', 'LCQMC'],
+    #     ['full', '08', 'LCQMC'],
+    #     ['full', '09', 'LCQMC'],
+    #     ['part', '10', 'sent_pair']
+    # ]
     durations = []
     accs = []
     for tmp_model_config in tmp_models_config:
